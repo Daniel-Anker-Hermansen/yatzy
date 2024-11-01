@@ -3,6 +3,7 @@ use std::iter::repeat;
 pub const NUMBER_OF_DIE: usize = 5;
 pub const NUMBER_OF_ACTIONS: usize = ACTIONS.len();
 pub const NUMBER_OF_POSSIBLE_THROWS: usize = number_of_possible_throws(NUMBER_OF_DIE, 6);
+pub const BONUS_REQUIREMENT: usize = 63;
 
 const fn number_of_possible_throws(remaining: usize, max: u8) -> usize {
     if remaining == 0 {
@@ -20,6 +21,7 @@ const fn number_of_possible_throws(remaining: usize, max: u8) -> usize {
 
 pub struct Action {
     number: fn(&[u8]) -> f64,
+    bonus: fn(&[u8]) -> usize,
     pub name: &'static str,
 }
 
@@ -27,74 +29,97 @@ impl Action {
     pub fn number(&self, cast: &[u8]) -> f64 {
         (self.number)(cast)
     }
+
+    pub fn bonus(&self, cast: &[u8]) -> usize {
+	(self.bonus)(cast)
+    }
 }
 
 pub const ACTIONS: &[Action] = &[
     Action {
         number: number::<1>,
         name: "ener",
+	bonus: bonus::<1>,
     },
     Action {
         number: number::<2>,
         name: "toer",
+	bonus: bonus::<2>,
     },
     Action {
         number: number::<3>,
         name: "treer",
+	bonus: bonus::<3>,
     },
     Action {
         number: number::<4>,
         name: "fier",
+	bonus: bonus::<4>,
     },
     Action {
         number: number::<5>,
         name: "femer",
+	bonus: bonus::<5>,
     },
     Action {
         number: number::<6>,
         name: "sekser",
+	bonus: bonus::<6>,
     },
     Action {
         number: pair,
         name: "par",
+	bonus: |_| 0,
     },
     Action {
         number: two_pair,
         name: "to par",
+	bonus: |_| 0,
     },
     Action {
         number: triple,
         name: "tre ens",
+	bonus: |_| 0,
     },
     Action {
         number: quad,
         name: "fire ens",
+	bonus: |_| 0,
     },
     Action {
         number: full_house,
         name: "fuldt hus",
+	bonus: |_| 0,
     },
     Action {
         number: low,
         name: "lav",
+	bonus: |_| 0,
     },
     Action {
         number: high,
         name: "høj",
+	bonus: |_| 0,
     },
     Action {
         number: chance,
         name: "chance",
+	bonus: |_| 0,
     },
     Action {
         number: yatzy,
         name: "yatzy",
+	bonus: |_| 0,
     },
 ];
 
 
 pub fn number<const N: u8>(cast: &[u8]) -> f64 {
     cast.iter().filter(|c| **c == N).count() as f64 * N as f64
+}
+
+fn bonus<const N: u8>(cast: &[u8]) -> usize {
+	cast.iter().filter(|k| **k == N).sum::<u8>() as usize
 }
 
 fn pair(cast: &[u8]) -> f64 {

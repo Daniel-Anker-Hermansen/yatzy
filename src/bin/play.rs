@@ -9,18 +9,25 @@ fn main() {
 
     let reverse_map: HashMap<&[u8], usize> =
         casts.iter().map(|(v, _)| v.as_slice()).zip(0..).collect();
-    
-    let mut dp = vec![[[0u8; NUMBER_OF_POSSIBLE_THROWS]; 3]; 1 << NUMBER_OF_ACTIONS];
-    
-    let len = 3 * NUMBER_OF_POSSIBLE_THROWS * (1 << NUMBER_OF_ACTIONS);
+
+    let mut dp = vec![
+        [[[0u8; NUMBER_OF_POSSIBLE_THROWS]; 3]; 1 << NUMBER_OF_ACTIONS];
+        BONUS_REQUIREMENT + 1
+    ];
+
+    let len = 3 * NUMBER_OF_POSSIBLE_THROWS * (1 << NUMBER_OF_ACTIONS) * (BONUS_REQUIREMENT + 1);
 
     let slice = unsafe { std::slice::from_raw_parts_mut(dp.as_mut_ptr().cast(), len) };
 
-    std::fs::File::open(path).unwrap().read_exact(slice).unwrap();
+    std::fs::File::open(path)
+        .unwrap()
+        .read_exact(slice)
+        .unwrap();
 
     let mut s = String::new();
     let mut finished = 0;
     let mut score = 0.0;
+    let mut bonus = 63;
     for _ in 0..NUMBER_OF_ACTIONS {
         println!("Enter the results:");
 
@@ -30,7 +37,7 @@ fn main() {
         cast.sort();
 
         let cast_num = reverse_map[cast.as_slice()];
-        let action = dp[finished][0][cast_num];
+        let action = dp[bonus][finished][0][cast_num];
         print!("Reroll");
         for i in 0..NUMBER_OF_DIE {
             if action & (1 << i) == 0 {
@@ -47,7 +54,7 @@ fn main() {
         cast.sort();
 
         let cast_num = reverse_map[cast.as_slice()];
-        let action = dp[finished][1][cast_num];
+        let action = dp[bonus][finished][1][cast_num];
         print!("Reroll");
         for i in 0..NUMBER_OF_DIE {
             if action & (1 << i) == 0 {
@@ -64,10 +71,15 @@ fn main() {
         cast.sort();
 
         let cast_num = reverse_map[cast.as_slice()];
-        let action = dp[finished][2][cast_num];
+        let action = dp[bonus][finished][2][cast_num];
 
         finished |= 1 << action;
         score += ACTIONS[action as usize].number(cast.as_slice());
+        let bonus_is_zero = bonus == 0;
+        bonus = bonus.saturating_sub(ACTIONS[action as usize].bonus(cast.as_slice()));
+        if !bonus_is_zero && bonus == 0 {
+            score += 50.0;
+        }
         println!(
             "Enact action {}. Score is now {}",
             ACTIONS[action as usize].name, score
